@@ -6,15 +6,37 @@
     <title>Meu Gemini na Nuvem</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #131314; color: #e3e3e3; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; padding: 10px; }
+        body { background-color: #131314; color: #e3e3e3; display: flex; height: 100vh; overflow: hidden; }
         
-        .container { 
-            width: 100%; max-width: 800px; height: 95vh; background: #1e1f20; 
-            padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
-            display: flex; flex-direction: column; justify-content: space-between; 
+        /* Sidebar de Histórico estilo Gemini */
+        .sidebar {
+            width: 260px; background: #1e1f20; border-right: 1px solid #333537;
+            display: flex; flex-direction: column; padding: 15px; justify-content: space-between;
+        }
+        .sidebar-top { display: flex; flex-direction: column; gap: 15px; flex: 1; overflow-y: auto; }
+        .btn-novo-chat { 
+            background: #282a2c; color: #e3e3e3; border: 1px solid #444746; padding: 10px 14px; 
+            border-radius: 24px; cursor: pointer; text-align: left; font-size: 14px; display: flex; align-items: center; gap: 8px; 
+        }
+        .btn-novo-chat:hover { background: #333537; }
+        
+        .historico-lista { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+        .historico-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 8px 12px; border-radius: 16px; cursor: pointer; font-size: 13px; color: #c4c7c5; 
+        }
+        .historico-item:hover { background: #282a2c; color: #fff; }
+        .historico-item.ativo { background: #004a77; color: #a8c7fa; }
+        .btn-excluir-chat { background: transparent; border: none; color: #f28b82; cursor: pointer; font-size: 12px; display: none; }
+        .historico-item:hover .btn-excluir-chat { display: block; }
+
+        /* Área Principal do Chat */
+        .main-container { 
+            flex: 1; height: 100vh; background: #131314; 
+            display: flex; flex-direction: column; justify-content: space-between; padding: 20px; 
         }
         .hidden { display: none !important; }
-        h2 { text-align: center; margin-bottom: 10px; color: #a8c7fa; font-weight: 500; font-size: 20px; }
+        h2 { color: #a8c7fa; font-weight: 500; font-size: 18px; margin-bottom: 10px; }
         
         input[type="text"], input[type="email"], input[type="password"] { 
             width: 100%; padding: 12px; margin-top: 10px; border-radius: 24px; border: 1px solid #444746; background: #131314; color: #fff; font-size: 16px; outline: none; 
@@ -24,72 +46,77 @@
         button { background: #a8c7fa; color: #041e49; font-weight: bold; border: none; padding: 10px 20px; border-radius: 24px; cursor: pointer; transition: 0.2s; }
         button:hover { background: #b9d4ff; }
         
-        .tools-bar { display: flex; gap: 10px; margin-bottom: 10px; justify-content: center; }
-        .btn-tool { background: #333537; color: #e3e3e3; padding: 6px 14px; font-size: 13px; border-radius: 16px; }
-        .btn-tool:hover { background: #444746; }
-        
         #chat-box { 
             flex: 1; overflow-y: auto; padding: 10px; border-radius: 12px; 
-            margin-bottom: 10px; display: flex; flex-direction: column; gap: 12px; 
-            background: #131314; border: 1px solid #333537;
+            margin-bottom: 10px; display: flex; flex-direction: column; gap: 15px; 
         }
         
-        .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; }
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 80%; }
         .user-wrapper { align-self: flex-end; align-items: flex-end; }
         .bot-wrapper { align-self: flex-start; align-items: flex-start; }
 
-        .msg { padding: 10px 14px; border-radius: 16px; line-height: 1.4; word-wrap: break-word; font-size: 14px; }
-        .user { background: #333537; color: #e3e3e3; border-bottom-right-radius: 4px; }
-        .bot { background: transparent; color: #e3e3e3; border: 1px solid #444746; border-bottom-left-radius: 4px; }
+        .msg { padding: 12px 16px; border-radius: 18px; line-height: 1.4; word-wrap: break-word; font-size: 14px; }
+        .user { background: #282a2c; color: #e3e3e3; border-bottom-right-radius: 4px; }
+        .bot { background: transparent; color: #e3e3e3; border-bottom-left-radius: 4px; }
         
-        .btn-apagar-msg { background: transparent; color: #f28b82; font-size: 11px; border: none; cursor: pointer; margin-top: 2px; padding: 2px 5px; width: auto; }
-        .btn-apagar-msg:hover { text-decoration: underline; background: transparent; }
-
-        pre { background: #1e1f20; padding: 8px; border-radius: 6px; overflow-x: auto; margin-top: 5px; }
+        pre { background: #1e1f20; padding: 10px; border-radius: 8px; overflow-x: auto; margin-top: 8px; border: 1px solid #333537; }
         code { font-family: monospace; color: #a8c7fa; font-size: 13px; }
         
-        .input-area { display: flex; flex-direction: column; background: #1e1f20; }
-        .input-group { display: flex; gap: 10px; align-items: center; }
-        .input-group input { margin-top: 0; border: 1px solid #444746; }
+        .input-area { display: flex; flex-direction: column; background: #131314; max-width: 800px; width: 100%; margin: 0 auto; }
+        .input-group { display: flex; gap: 10px; align-items: center; background: #1e1f20; padding: 8px 15px; border-radius: 28px; border: 1px solid #444746; }
+        .input-group input { margin-top: 0; border: none; background: transparent; flex: 1; }
+        .input-group input:focus { border: none; }
         
-        #nome-arquivo { font-size: 11px; color: #a8c7fa; margin-bottom: 5px; }
+        .btn-anexar { background: transparent; color: #e3e3e3; padding: 6px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+        .btn-anexar:hover { background: #333537; }
+        #nome-arquivo { font-size: 11px; color: #a8c7fa; margin-bottom: 5px; text-align: center; }
+
+        /* Tela de login centralizada */
+        .login-wrapper { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #131314; }
+        .login-box { width: 100%; max-width: 400px; background: #1e1f20; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
     </style>
 </head>
 <body>
 
     <!-- Tela de Login -->
-    <div class="container hidden" id="login-screen" style="max-width: 400px; height: auto;">
-        <h2>Acesso à IA</h2>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="senha" placeholder="Senha">
-        <button onclick="fazerLogin()" style="width: 100%; margin-top: 15px;">Entrar</button>
-        <p id="erro-login" style="color: #f28b82; margin-top: 10px; text-align: center; font-size: 13px;"></p>
+    <div class="login-wrapper" id="login-screen">
+        <div class="login-box">
+            <h2>Acesso à IA</h2>
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="senha" placeholder="Senha">
+            <button onclick="fazerLogin()" style="width: 100%; margin-top: 20px;">Entrar</button>
+            <p id="erro-login" style="color: #f28b82; margin-top: 10px; text-align: center; font-size: 13px;"></p>
+        </div>
     </div>
 
-    <!-- Tela de Chat -->
-    <div class="container" id="chat-screen">
-        <h2>Meu Gemini</h2>
-        
-        <div class="tools-bar">
-            <button class="btn-tool" onclick="limparTudo()">🗑️ Limpar Tudo</button>
-            <button class="btn-tool" onclick="document.getElementById('fileInput').click()">📎 Anexar</button>
-            <input type="file" id="fileInput" class="hidden" accept="image/*,.txt,.js,.py,.html" onchange="prepararArquivo()">
+    <!-- Tela Principal do Chat -->
+    <div class="sidebar hidden" id="sidebar">
+        <div class="sidebar-top">
+            <button class="btn-novo-chat" onclick="criarNovoChat()">➕ Novo chat</button>
+            <div style="font-size: 12px; color: #8e918f; margin-top: 10px; padding-left: 5px;">Recentes</div>
+            <div class="historico-lista" id="historico-lista"></div>
         </div>
-        
-        <div id="nome-arquivo"></div>
+        <div style="font-size: 11px; color: #8e918f; text-align: center;">Meu Gemini na Nuvem</div>
+    </div>
 
+    <div class="main-container hidden" id="chat-screen">
+        <h2>Meu Gemini</h2>
+        <div id="nome-arquivo"></div>
         <div id="chat-box"></div>
         
         <div class="input-area">
             <div class="input-group">
-                <input type="text" id="mensagem" placeholder="Digite sua mensagem ou código..." onkeydown="if(event.key==='Enter') enviarMensagem()">
-                <button onclick="enviarMensagem()">Enviar</button>
+                <button class="btn-anexar" onclick="document.getElementById('fileInput').click()" title="Anexar arquivo">📎</button>
+                <input type="file" id="fileInput" class="hidden" accept="image/*,.txt,.js,.py,.html" onchange="prepararArquivo()">
+                <input type="text" id="mensagem" placeholder="Digite uma mensagem..." onkeydown="if(event.key==='Enter') enviarMensagem()">
+                <button onclick="enviarMensagem()" style="padding: 8px 16px; border-radius: 20px;">Enviar</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Vai directo para o chat se já testou login, ou mantém login
+        let chats = JSON.parse(localStorage.getItem('gemini_chats')) || [];
+        let chatAtualId = null;
         let arquivoBase64 = null;
         let arquivoMimeType = null;
 
@@ -108,7 +135,14 @@
 
                 if (data.sucesso) {
                     document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('sidebar').classList.remove('hidden');
                     document.getElementById('chat-screen').classList.remove('hidden');
+                    carregarHistoricoSidebar();
+                    if (chats.length > 0) {
+                        abrirChat(chats[0].id);
+                    } else {
+                        criarNovoChat();
+                    }
                 } else {
                     erro.innerText = 'E-mail ou senha incorretos!';
                 }
@@ -117,13 +151,69 @@
             }
         }
 
-        function limparTudo() {
-            document.getElementById('chat-box').innerHTML = '';
+        function criarNovoChat() {
+            const novoChat = {
+                id: 'chat_' + Date.now(),
+                titulo: 'Nova conversa',
+                mensagens: []
+            };
+            chats.unshift(novoChat);
+            salvarEAtualizar();
+            abrirChat(novoChat.id);
         }
 
-        function apagarMensagem(elementoId) {
-            const bloco = document.getElementById(elementoId);
-            if(bloco) bloco.remove();
+        function abrirChat(id) {
+            chatAtualId = id;
+            renderizarMensagens();
+            carregarHistoricoSidebar();
+        }
+
+        function excluirChat(id, event) {
+            event.stopPropagation();
+            chats = chats.filter(c => c.id !== id);
+            salvarEAtualizar();
+            if (chatAtualId === id) {
+                if (chats.length > 0) {
+                    abrirChat(chats[0].id);
+                } else {
+                    criarNovoChat();
+                }
+            }
+        }
+
+        function salvarEAtualizar() {
+            localStorage.setItem('gemini_chats', JSON.stringify(chats));
+            carregarHistoricoSidebar();
+        }
+
+        function carregarHistoricoSidebar() {
+            const lista = document.getElementById('historico-lista');
+            lista.innerHTML = '';
+            chats.forEach(c => {
+                const ativoClass = c.id === chatAtualId ? 'ativo' : '';
+                lista.innerHTML += `
+                    <div class="historico-item ${ativoClass}" onclick="abrirChat('${c.id}')">
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">${c.titulo}</span>
+                        <button class="btn-excluir-chat" onclick="excluirChat('${c.id}', event)" title="Excluir chat">🗑️</button>
+                    </div>`;
+            });
+        }
+
+        function renderizarMensagens() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+            const chat = chats.find(c => c.id === chatAtualId);
+            if (!chat) return;
+
+            chat.mensagens.forEach(m => {
+                const roleClass = m.remetente === 'user' ? 'user-wrapper' : 'bot-wrapper';
+                const msgClass = m.remetente === 'user' ? 'user' : 'bot';
+                chatBox.innerHTML += `
+                    <div class="msg-wrapper ${roleClass}">
+                        <div class="msg ${msgClass}">${m.texto}</div>
+                    </div>`;
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         function prepararArquivo() {
@@ -146,31 +236,22 @@
         async function enviarMensagem() {
             const input = document.getElementById('mensagem');
             const msg = input.value.trim();
-            
             if (!msg && !arquivoBase64) return;
 
-            const chatBox = document.getElementById('chat-box');
-            const idUnico = 'msg-' + Date.now();
-            
+            const chat = chats.find(c => c.id === chatAtualId);
+            if (!chat) return;
+
+            // Se for a primeira mensagem, define o título da conversa com o texto enviado
+            if (chat.titulo === 'Nova conversa') {
+                chat.titulo = msg.length > 25 ? msg.substring(0, 25) + '...' : msg;
+            }
+
             let conteudoUsuario = msg;
             if(arquivoBase64) conteudoUsuario += `<br><small><i>(Arquivo anexado)</i></small>`;
-            
-            // Cria balão do usuário com botão de excluir individual
-            chatBox.innerHTML += `
-                <div class="msg-wrapper user-wrapper" id="${idUnico}">
-                    <div class="msg user">${conteudoUsuario}</div>
-                    <button class="btn-apagar-msg" onclick="apagarMensagem('${idUnico}')">Excluir</button>
-                </div>`;
-            
-            input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
 
-            const botIdUnico = 'bot-' + Date.now();
-            chatBox.innerHTML += `
-                <div class="msg-wrapper bot-wrapper" id="${botIdUnico}">
-                    <div class="msg bot">Pensando...</div>
-                </div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            chat.mensagens.push({ remetente: 'user', texto: conteudoUsuario });
+            input.value = '';
+            renderizarMensagens();
 
             const payload = {
                 mensagem: msg,
@@ -183,6 +264,14 @@
             document.getElementById('fileInput').value = '';
             document.getElementById('nome-arquivo').innerText = '';
 
+            // Adiciona balão temporário de "Pensando..."
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `
+                <div class="msg-wrapper bot-wrapper" id="temp-pensando">
+                    <div class="msg bot">Pensando...</div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
@@ -191,19 +280,16 @@
                 });
                 const data = await res.json();
                 
-                const botDiv = document.querySelector(`#${botIdUnico} .bot`);
-                const respostaTexto = data.resposta || data.erro || 'Sem resposta.';
-                botDiv.innerHTML = formatarResposta(respostaTexto);
-                
-                // Adiciona botão de excluir na resposta da IA também se quiser
-                const botWrapper = document.getElementById(botIdUnico);
-                botWrapper.innerHTML += `<button class="btn-apagar-msg" onclick="apagarMensagem('${botIdUnico}')">Excluir</button>`;
+                const respostaTexto = formatarResposta(data.resposta || data.erro || 'Sem resposta.');
+                chat.mensagens.push({ remetente: 'bot', texto: respostaTexto });
+                salvarEAtualizar();
+                renderizarMensagens();
 
             } catch (e) {
-                const botDiv = document.querySelector(`#${botIdUnico} .bot`);
-                botDiv.innerText = 'Erro de conexão com o servidor.';
+                chat.mensagens.push({ remetente: 'bot', texto: 'Erro de conexão com o servidor.' });
+                salvarEAtualizar();
+                renderizarMensagens();
             }
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
 </body>
