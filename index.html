@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Gemini na Nuvem</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #131314; color: #e3e3e3; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; padding: 10px; }
+        
+        .container { 
+            width: 100%; max-width: 800px; height: 95vh; background: #1e1f20; 
+            padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); 
+            display: flex; flex-direction: column; justify-content: space-between; 
+        }
+        .hidden { display: none !important; }
+        h2 { text-align: center; margin-bottom: 10px; color: #a8c7fa; font-weight: 500; font-size: 20px; }
+        
+        input[type="text"], input[type="email"], input[type="password"] { 
+            width: 100%; padding: 12px; margin-top: 10px; border-radius: 24px; border: 1px solid #444746; background: #131314; color: #fff; font-size: 16px; outline: none; 
+        }
+        input:focus { border-color: #a8c7fa; }
+        
+        button { background: #a8c7fa; color: #041e49; font-weight: bold; border: none; padding: 10px 20px; border-radius: 24px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #b9d4ff; }
+        
+        .tools-bar { display: flex; gap: 10px; margin-bottom: 10px; justify-content: center; }
+        .btn-tool { background: #333537; color: #e3e3e3; padding: 6px 14px; font-size: 13px; border-radius: 16px; }
+        .btn-tool:hover { background: #444746; }
+        
+        #chat-box { 
+            flex: 1; overflow-y: auto; padding: 10px; border-radius: 12px; 
+            margin-bottom: 10px; display: flex; flex-direction: column; gap: 12px; 
+            background: #131314; border: 1px solid #333537;
+        }
+        
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; }
+        .user-wrapper { align-self: flex-end; align-items: flex-end; }
+        .bot-wrapper { align-self: flex-start; align-items: flex-start; }
+
+        .msg { padding: 10px 14px; border-radius: 16px; line-height: 1.4; word-wrap: break-word; font-size: 14px; }
+        .user { background: #333537; color: #e3e3e3; border-bottom-right-radius: 4px; }
+        .bot { background: transparent; color: #e3e3e3; border: 1px solid #444746; border-bottom-left-radius: 4px; }
+        
+        .btn-apagar-msg { background: transparent; color: #f28b82; font-size: 11px; border: none; cursor: pointer; margin-top: 2px; padding: 2px 5px; width: auto; }
+        .btn-apagar-msg:hover { text-decoration: underline; background: transparent; }
+
+        pre { background: #1e1f20; padding: 8px; border-radius: 6px; overflow-x: auto; margin-top: 5px; }
+        code { font-family: monospace; color: #a8c7fa; font-size: 13px; }
+        
+        .input-area { display: flex; flex-direction: column; background: #1e1f20; }
+        .input-group { display: flex; gap: 10px; align-items: center; }
+        .input-group input { margin-top: 0; border: 1px solid #444746; }
+        
+        #nome-arquivo { font-size: 11px; color: #a8c7fa; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- Tela de Login -->
+    <div class="container hidden" id="login-screen" style="max-width: 400px; height: auto;">
+        <h2>Acesso à IA</h2>
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="senha" placeholder="Senha">
+        <button onclick="fazerLogin()" style="width: 100%; margin-top: 15px;">Entrar</button>
+        <p id="erro-login" style="color: #f28b82; margin-top: 10px; text-align: center; font-size: 13px;"></p>
+    </div>
+
+    <!-- Tela de Chat -->
+    <div class="container" id="chat-screen">
+        <h2>Meu Gemini</h2>
+        
+        <div class="tools-bar">
+            <button class="btn-tool" onclick="limparTudo()">🗑️ Limpar Tudo</button>
+            <button class="btn-tool" onclick="document.getElementById('fileInput').click()">📎 Anexar</button>
+            <input type="file" id="fileInput" class="hidden" accept="image/*,.txt,.js,.py,.html" onchange="prepararArquivo()">
+        </div>
+        
+        <div id="nome-arquivo"></div>
+
+        <div id="chat-box"></div>
+        
+        <div class="input-area">
+            <div class="input-group">
+                <input type="text" id="mensagem" placeholder="Digite sua mensagem ou código..." onkeydown="if(event.key==='Enter') enviarMensagem()">
+                <button onclick="enviarMensagem()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vai directo para o chat se já testou login, ou mantém login
+        let arquivoBase64 = null;
+        let arquivoMimeType = null;
+
+        async function fazerLogin() {
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const erro = document.getElementById('erro-login');
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+                const data = await res.json();
+
+                if (data.sucesso) {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('chat-screen').classList.remove('hidden');
+                } else {
+                    erro.innerText = 'E-mail ou senha incorretos!';
+                }
+            } catch (e) {
+                erro.innerText = 'Erro ao conectar ao servidor.';
+            }
+        }
+
+        function limparTudo() {
+            document.getElementById('chat-box').innerHTML = '';
+        }
+
+        function apagarMensagem(elementoId) {
+            const bloco = document.getElementById(elementoId);
+            if(bloco) bloco.remove();
+        }
+
+        function prepararArquivo() {
+            const file = document.getElementById('fileInput').files[0];
+            if(file) {
+                document.getElementById('nome-arquivo').innerText = `📎 ${file.name}`;
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    arquivoBase64 = reader.result.split(',')[1];
+                    arquivoMimeType = file.type || "text/plain";
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function formatarResposta(texto) {
+            return texto.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        }
+
+        async function enviarMensagem() {
+            const input = document.getElementById('mensagem');
+            const msg = input.value.trim();
+            
+            if (!msg && !arquivoBase64) return;
+
+            const chatBox = document.getElementById('chat-box');
+            const idUnico = 'msg-' + Date.now();
+            
+            let conteudoUsuario = msg;
+            if(arquivoBase64) conteudoUsuario += `<br><small><i>(Arquivo anexado)</i></small>`;
+            
+            // Cria balão do usuário com botão de excluir individual
+            chatBox.innerHTML += `
+                <div class="msg-wrapper user-wrapper" id="${idUnico}">
+                    <div class="msg user">${conteudoUsuario}</div>
+                    <button class="btn-apagar-msg" onclick="apagarMensagem('${idUnico}')">Excluir</button>
+                </div>`;
+            
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const botIdUnico = 'bot-' + Date.now();
+            chatBox.innerHTML += `
+                <div class="msg-wrapper bot-wrapper" id="${botIdUnico}">
+                    <div class="msg bot">Pensando...</div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const payload = {
+                mensagem: msg,
+                imagem: arquivoBase64,
+                mimeType: arquivoMimeType
+            };
+
+            arquivoBase64 = null;
+            arquivoMimeType = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('nome-arquivo').innerText = '';
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                const botDiv = document.querySelector(`#${botIdUnico} .bot`);
+                const respostaTexto = data.resposta || data.erro || 'Sem resposta.';
+                botDiv.innerHTML = formatarResposta(respostaTexto);
+                
+                // Adiciona botão de excluir na resposta da IA também se quiser
+                const botWrapper = document.getElementById(botIdUnico);
+                botWrapper.innerHTML += `<button class="btn-apagar-msg" onclick="apagarMensagem('${botIdUnico}')">Excluir</button>`;
+
+            } catch (e) {
+                const botDiv = document.querySelector(`#${botIdUnico} .bot`);
+                botDiv.innerText = 'Erro de conexão com o servidor.';
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
