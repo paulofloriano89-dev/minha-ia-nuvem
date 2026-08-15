@@ -25,23 +25,12 @@ app.post('/api/chat', async (req, res) => {
 
     const { mensagem, imagem, mimeType } = req.body;
 
-    // Lista de modelos que o servidor vai testar automaticamente
-    const modelosParaTestar = [
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro',
-        'gemini-flash-latest'
-    ];
+    // Apenas os modelos rápidos e válidos
+    const modelos = ['gemini-1.5-flash', 'gemini-1.5-pro'];
 
-    let respostaTexto = null;
-    let ultimoErro = null;
-
-    // Percorre a lista e tenta cada modelo até um responder
-    for (const nomeModelo of modelosParaTestar) {
+    for (const nomeModelo of modelos) {
         try {
-            console.log(`Tentando responder com o modelo: ${nomeModelo}...`);
             const model = genAI.getGenerativeModel({ model: nomeModelo });
-
             let promptParts = [mensagem || "Analise este arquivo:"];
 
             if (imagem) {
@@ -55,23 +44,13 @@ app.post('/api/chat', async (req, res) => {
 
             const result = await model.generateContent(promptParts);
             const response = await result.response;
-            respostaTexto = response.text();
-
-            console.log(`Sucesso com o modelo: ${nomeModelo}!`);
-            break; // Encontrou um modelo funcionando, sai do loop imediatamente
+            return res.json({ resposta: response.text() });
         } catch (error) {
-            console.error(`O modelo ${nomeModelo} falhou: ${error.message}. Tentando o próximo...`);
-            ultimoErro = error;
+            console.error(`Falha no ${nomeModelo}:`, error.message);
         }
     }
 
-    if (respostaTexto) {
-        res.json({ resposta: respostaTexto });
-    } else {
-        res.status(500).json({ 
-            erro: `Todos os modelos falharam no momento. Último erro: ${ultimoErro ? ultimoErro.message : 'Desconhecido'}` 
-        });
-    }
+    res.status(500).json({ erro: 'Servidor do Google ocupado. Tente novamente em instantes.' });
 });
 
 app.use(express.static(__dirname));

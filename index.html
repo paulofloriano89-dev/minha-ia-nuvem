@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meu Gemini na Nuvem</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -74,6 +74,30 @@
         /* Tela de login centralizada */
         .login-wrapper { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #131314; }
         .login-box { width: 100%; max-width: 400px; background: #1e1f20; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+        
+      /* Ajuste automático para celulares */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    
+    /* Se tiver sidebar/painel lateral */
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 50px;
+    }
+
+    .chat-container {
+        width: 100% !important;
+        height: calc(100vh - 50px) !important;
+        padding: 10px;
+    }
+
+    .input-box {
+        width: 100% !important;
+    }
+}
     </style>
 </head>
 <body>
