@@ -26,8 +26,7 @@ app.post('/api/chat', async (req, res) => {
 
     try {
         const { mensagem, imagem, mimeType } = req.body;
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+       const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
         let promptParts = [mensagem || "Analise este arquivo:"];
 
         if (imagem) {
