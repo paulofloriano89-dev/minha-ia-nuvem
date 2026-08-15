@@ -23,29 +23,54 @@ app.post('/api/chat', async (req, res) => {
         return res.status(401).json({ erro: 'Não autorizado' });
     }
 
-    try {
-        const { mensagem, imagem, mimeType } = req.body;
-        
-        // Usando o modelo exato indicado pelo painel do Google AI Studio
-       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-       
-        let promptParts = [mensagem || "Analise este arquivo:"];
+    const { mensagem, imagem, mimeType } = req.body;
 
-        if (imagem) {
-            promptParts.push({
-                inlineData: {
-                    data: imagem,
-                    mimeType: mimeType || 'image/jpeg'
-                }
-            });
+    // Lista de modelos que o servidor vai testar automaticamente
+    const modelosParaTestar = [
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-flash-latest'
+    ];
+
+    let respostaTexto = null;
+    let ultimoErro = null;
+
+    // Percorre a lista e tenta cada modelo até um responder
+    for (const nomeModelo of modelosParaTestar) {
+        try {
+            console.log(`Tentando responder com o modelo: ${nomeModelo}...`);
+            const model = genAI.getGenerativeModel({ model: nomeModelo });
+
+            let promptParts = [mensagem || "Analise este arquivo:"];
+
+            if (imagem) {
+                promptParts.push({
+                    inlineData: {
+                        data: imagem,
+                        mimeType: mimeType || 'image/jpeg'
+                    }
+                });
+            }
+
+            const result = await model.generateContent(promptParts);
+            const response = await result.response;
+            respostaTexto = response.text();
+
+            console.log(`Sucesso com o modelo: ${nomeModelo}!`);
+            break; // Encontrou um modelo funcionando, sai do loop imediatamente
+        } catch (error) {
+            console.error(`O modelo ${nomeModelo} falhou: ${error.message}. Tentando o próximo...`);
+            ultimoErro = error;
         }
+    }
 
-        const result = await model.generateContent(promptParts);
-        const response = await result.response;
-        res.json({ resposta: response.text() });
-    } catch (error) {
-        console.error("Erro detalhado:", error);
-        res.status(500).json({ erro: `Erro: ${error.message}` });
+    if (respostaTexto) {
+        res.json({ resposta: respostaTexto });
+    } else {
+        res.status(500).json({ 
+            erro: `Todos os modelos falharam no momento. Último erro: ${ultimoErro ? ultimoErro.message : 'Desconhecido'}` 
+        });
     }
 });
 
