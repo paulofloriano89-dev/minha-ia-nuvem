@@ -27,7 +27,7 @@ app.post('/api/chat', async (req, res) => {
         const { mensagem, imagem, mimeType } = req.body;
         
         // Usando o modelo exato indicado pelo painel do Google AI Studio
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
         
         let promptParts = [mensagem || "Analise este arquivo:"];
 
