@@ -1,6 +1,5 @@
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const path = require('path');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -26,7 +25,10 @@ app.post('/api/chat', async (req, res) => {
 
     try {
         const { mensagem, imagem, mimeType } = req.body;
-       const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        
+        // Usando o modelo exato indicado pelo painel do Google AI Studio
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
         let promptParts = [mensagem || "Analise este arquivo:"];
 
         if (imagem) {
@@ -42,8 +44,8 @@ app.post('/api/chat', async (req, res) => {
         const response = await result.response;
         res.json({ resposta: response.text() });
     } catch (error) {
-        console.error(error);
-        res.json({ erro: 'Erro interno. Verifique se a Chave de API está correta no Render.' });
+        console.error("Erro detalhado:", error);
+        res.status(500).json({ erro: `Erro: ${error.message}` });
     }
 });
 
