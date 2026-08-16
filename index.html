@@ -75,29 +75,35 @@
         .login-wrapper { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #131314; }
         .login-box { width: 100%; max-width: 400px; background: #1e1f20; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); }
         
-      /* Ajuste automático para celulares */
+    /* Ajuste inteligente para celulares */
 @media (max-width: 768px) {
     body {
-        flex-direction: column;
+        position: relative;
     }
     
-    /* Se tiver sidebar/painel lateral */
+    /* Deixa o histórico lateral oculto por padrão no celular para não atrapalhar */
     .sidebar {
-        width: 100% !important;
-        height: auto !important;
-        max-height: 50px;
+        position: absolute;
+        left: -100%;
+        top: 0;
+        width: 75% !important;
+        height: 100% !important;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        background-color: #1e1e1e; /* ajuste para a cor do seu tema */
+    }
+
+    /* Classe para quando o menu estiver aberto */
+    .sidebar.ativo {
+        left: 0;
     }
 
     .chat-container {
         width: 100% !important;
-        height: calc(100vh - 50px) !important;
-        padding: 10px;
-    }
-
-    .input-box {
-        width: 100% !important;
     }
 }
+  
+
     </style>
 </head>
 <body>
