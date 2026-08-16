@@ -1,10 +1,11 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Inicializa o Llama via Groq
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 let usuarioLogado = false;
 
@@ -23,34 +24,26 @@ app.post('/api/chat', async (req, res) => {
         return res.status(401).json({ erro: 'Não autorizado' });
     }
 
-    const { mensagem, imagem, mimeType } = req.body;
+    try {
+        const { mensagem } = req.body;
+        
+        // Chamada ultra-rápida para o Llama 3.1 da Meta
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "user",
+                    content: mensagem || "Olá",
+                },
+            ],
+            model: "llama-3.1-8b-instant", // Modelo super rápido e leve
+        });
 
-    // Apenas os modelos rápidos e válidos
-    const modelos = ['gemini-1.5-flash', 'gemini-1.5-pro'];
-
-    for (const nomeModelo of modelos) {
-        try {
-            const model = genAI.getGenerativeModel({ model: nomeModelo });
-            let promptParts = [mensagem || "Analise este arquivo:"];
-
-            if (imagem) {
-                promptParts.push({
-                    inlineData: {
-                        data: imagem,
-                        mimeType: mimeType || 'image/jpeg'
-                    }
-                });
-            }
-
-            const result = await model.generateContent(promptParts);
-            const response = await result.response;
-            return res.json({ resposta: response.text() });
-        } catch (error) {
-            console.error(`Falha no ${nomeModelo}:`, error.message);
-        }
+        const respostaTexto = chatCompletion.choices[0]?.message?.content || "Sem resposta";
+        res.json({ resposta: respostaTexto });
+    } catch (error) {
+        console.error("Erro no Llama:", error);
+        res.status(500).json({ erro: `Erro ao processar: ${error.message}` });
     }
-
-    res.status(500).json({ erro: 'Servidor do Google ocupado. Tente novamente em instantes.' });
 });
 
 app.use(express.static(__dirname));
