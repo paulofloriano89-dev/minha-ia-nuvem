@@ -35,7 +35,7 @@ app.post('/api/chat', async (req, res) => {
                     content: mensagem || "Olá",
                 },
             ],
-            model: "llama-3.1-8b-instant", // Modelo super rápido e leve
+            model: "openai/gpt-oss-20b", // Novo modelo atualizado da Groq
         });
 
         const respostaTexto = chatCompletion.choices[0]?.message?.content || "Sem resposta";
